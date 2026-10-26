@@ -50,6 +50,11 @@ async function seedTransactions(customers: Customers) {
     { customer: pacificCrest, address: '23 Birch St, Burlington VT', status: 'closed', fields: { propertyAddress: '23 Birch St, Burlington VT', purchasePrice: 410000, closingDate: daysFromNow(-90), buyerName: 'M. Caron', sellerName: 'D. Berlin', agentName: 'Alex Lake', agentEmail: 'alex@greenmtn.test', inspectionStatus: 'complete', financingType: 'va', earnestMoneyAmount: 8000, titleCompany: 'Green Mountain Title' } },
     { customer: harborMain, address: '301 Pine Trail, Asheville NC', status: 'active', fields: { propertyAddress: '301 Pine Trail, Asheville NC', purchasePrice: 580000, closingDate: daysFromNow(7), buyerName: 'F. Yamato', sellerName: 'L. Ross', agentName: 'Camille Boyd', agentEmail: 'camille.boyd@blueridge.test', inspectionStatus: 'pending', financingType: 'conventional', earnestMoneyAmount: 18000 } },
     { customer: harborMain, address: '14 Echo Way, Boise ID', status: 'active', fields: {} },
+    { customer: redline, address: '19 Alder Ct, Boise ID', status: 'active', fields: { propertyAddress: '19 Alder Ct, Boise ID', purchasePrice: '875,000', closingDate: daysFromNow(40), buyerName: 'T. Okafor', sellerName: 'R. Lindqvist', agentName: 'Marisol Vega', agentEmail: 'marisol.vega@homefinder.test', inspectionStatus: 'scheduled', financingType: 'conventional', earnestMoneyAmount: '$15,000', titleCompany: 'Gem State Title' } },
+    { customer: redline, address: '4 Juniper Way, Reno NV', status: 'active', fields: { propertyAddress: '4 Juniper Way, Reno NV', purchasePrice: 600000, closingDate: daysFromNow(33), buyerName: 'S. Varga', sellerName: 'K. Oduya', agentName: 'Devon Park', agentEmail: 'devon.park@coastalrealty.test', inspectionStatus: 'complete', financingType: 'conventional', earnestMoneyAmount: 30000, titleCompany: 'Sierra Title' } },
+    { customer: redline, address: '77 Mesa Verde Dr, Tucson AZ', status: 'active', fields: { propertyAddress: '77 Mesa Verde Dr, Tucson AZ', purchasePrice: 0, closingDate: daysFromNow(90), buyerName: 'Delgado Trust', sellerName: 'N. Haas', agentName: 'Rae Holloway', agentEmail: 'rae@hwoodrealty.test', inspectionStatus: 'pending', financingType: 'cash', earnestMoneyAmount: 5000 } },
+    { customer: pacificCrest, address: '260 Lakeshore Rd, Tahoe CA', status: 'active', fields: { propertyAddress: '260 Lakeshore Rd, Tahoe CA', purchasePrice: 720000, closingDate: daysFromNow(12).toISOString().slice(0, 10), buyerName: 'L. Brennan', sellerName: 'The Moss Family', agentName: 'Bailey Tran', agentEmail: 'bailey.tran@rockyrealty.test', inspectionStatus: 'failed', financingType: 'FHA', earnestMoneyAmount: 20000, titleCompany: 'Tahoe Title' } },
+    { customer: harborMain, address: '5 Orchard Ln, Burlington VT', status: 'active', fields: { propertyAddress: '5 Orchard Ln, Burlington VT', purchasePrice: 455000, closingDate: daysFromNow(5), buyerName: 'P. Nakamura', sellerName: 'G. Oyelaran', agentName: 'Camille Boyd', agentEmail: 'camille.boyd@blueridge.test', inspectionStatus: 'scheduled', financingType: 'va', earnestMoneyAmount: 14000, titleCompany: 'Green Mountain Title' } },
   ]
 
   for (const def of definitions) {
@@ -139,6 +144,15 @@ async function seedTaskDefinitions(customers: Customers) {
         { key: 'titleCompany', op: 'notExists' },
       ],
       actions: [{ type: 'createNote', config: { body: 'Title company not yet selected.' } }],
+      enabled: true,
+    },
+    {
+      customerId: harborMain._id,
+      name: 'Failed inspection note',
+      description: 'Add a note when an inspection fails.',
+      watchedKeys: ['inspectonStatus'],
+      predicates: [{ key: 'inspectonStatus', op: 'eq', value: 'failed' }],
+      actions: [{ type: 'createNote', config: { body: 'Inspection failed; schedule a re-inspection.' } }],
       enabled: true,
     },
   ])
