@@ -11,7 +11,9 @@ import { TopBar } from '../components/TopBar'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
+import { StatsRow } from '../components/StatsRow'
 import { transactionStatusColor } from '../utils/status'
+import { useCustomer } from '../context/CustomerContext'
 
 function formatDate(d?: unknown) {
   if (typeof d !== 'string') return '—'
@@ -30,14 +32,14 @@ export function TransactionsList() {
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState(initialDraft)
+  const { customers, selectedCustomerId, selectedCustomer, isAllCustomers } = useCustomer()
+  const customerName = (id: string) => customers.find(c => c._id === id)?.name ?? '—'
 
   const { data, isLoading } = useQuery({
-    queryKey: ['transactions'],
-    queryFn: () => endpoints.listTxns(),
+    queryKey: ['transactions', selectedCustomerId],
+    queryFn: () => endpoints.listTxns({ customerId: isAllCustomers ? undefined : selectedCustomerId }),
+    enabled: !!selectedCustomerId,
   })
-
-  const customers = useQuery({ queryKey: ['customers'], queryFn: endpoints.listCustomers })
-  const customerName = (id: string) => customers.data?.find(c => c._id === id)?.name ?? '—'
 
   const createMut = useMutation({
     mutationFn: async () => {
@@ -60,7 +62,11 @@ export function TransactionsList() {
     },
   })
 
+  const loading = isLoading || !selectedCustomerId
   const total = data?.total ?? 0
+  const items = data?.items ?? []
+  const activeCount = items.filter(t => t.status === 'active').length
+  const flaggedCount = items.filter(t => Object.values(t.flags ?? {}).some(Boolean)).length
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -68,15 +74,25 @@ export function TransactionsList() {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <PageHeader
           title="Transactions"
-          subtitle={isLoading ? 'Loading…' : `${total} ${total === 1 ? 'transaction' : 'transactions'} on file`}
+          subtitle={loading ? 'Loading…' : `${isAllCustomers ? 'All customers' : selectedCustomer?.name ?? ''} · ${total} ${total === 1 ? 'transaction' : 'transactions'} on file`}
           actions={
-            <Button variant="contained" onClick={() => setOpen(true)}>
+            <Button variant="contained" onClick={() => { setDraft({ ...initialDraft, customerId: isAllCustomers ? '' : selectedCustomerId }); setOpen(true) }}>
               New Transaction
             </Button>
           }
         />
 
-        {isLoading ? <LoadingSpinner /> : (data?.items?.length ?? 0) === 0 ? (
+        {!loading && items.length > 0 && (
+          <StatsRow
+            stats={[
+              { label: 'Total transactions', value: total },
+              { label: 'Active', value: activeCount },
+              { label: 'Flagged', value: flaggedCount },
+            ]}
+          />
+        )}
+
+        {loading ? <LoadingSpinner /> : (data?.items?.length ?? 0) === 0 ? (
           <EmptyState title="No transactions yet" body="Create one to get started." />
         ) : (
           <Paper variant="outlined">
@@ -152,7 +168,7 @@ export function TransactionsList() {
               value={draft.customerId}
               onChange={e => setDraft(d => ({ ...d, customerId: e.target.value }))}
             >
-              {(customers.data ?? []).map(c => (
+              {customers.map(c => (
                 <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
               ))}
             </TextField>

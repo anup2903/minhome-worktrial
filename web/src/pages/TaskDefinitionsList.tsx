@@ -9,13 +9,19 @@ import { TopBar } from '../components/TopBar'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
+import { StatsRow } from '../components/StatsRow'
+import { useCustomer } from '../context/CustomerContext'
 
 export function TaskDefinitionsList() {
   const nav = useNavigate()
   const qc = useQueryClient()
-  const { data, isLoading } = useQuery({ queryKey: ['task-definitions'], queryFn: endpoints.listTaskDefs })
-  const customers = useQuery({ queryKey: ['customers'], queryFn: endpoints.listCustomers })
-  const customerName = (id: string) => customers.data?.find(c => c._id === id)?.name ?? '—'
+  const { selectedCustomerId, selectedCustomer, isAllCustomers, customers } = useCustomer()
+  const customerName = (id: string) => customers.find(c => c._id === id)?.name ?? '—'
+  const { data, isLoading } = useQuery({
+    queryKey: ['task-definitions', selectedCustomerId],
+    queryFn: () => endpoints.listTaskDefs(isAllCustomers ? undefined : selectedCustomerId),
+    enabled: !!selectedCustomerId,
+  })
 
   const toggle = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
@@ -23,8 +29,10 @@ export function TaskDefinitionsList() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['task-definitions'] }),
   })
 
+  const loading = isLoading || !selectedCustomerId
   const total = data?.length ?? 0
   const enabledCount = (data ?? []).filter(d => d.enabled).length
+  const disabledCount = total - enabledCount
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -32,7 +40,7 @@ export function TaskDefinitionsList() {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <PageHeader
           title="Task Definitions"
-          subtitle={isLoading ? 'Loading…' : `${total} defined · ${enabledCount} enabled`}
+          subtitle={loading ? 'Loading…' : `${isAllCustomers ? 'All customers' : selectedCustomer?.name ?? ''} · ${total} defined · ${enabledCount} enabled`}
           actions={
             <Button variant="contained" onClick={() => nav('/task-definitions/new')}>
               New Task Definition
@@ -40,7 +48,17 @@ export function TaskDefinitionsList() {
           }
         />
 
-        {isLoading ? <LoadingSpinner /> : (data?.length ?? 0) === 0 ? (
+        {!loading && total > 0 && (
+          <StatsRow
+            stats={[
+              { label: 'Total rules', value: total },
+              { label: 'Enabled', value: enabledCount },
+              { label: 'Disabled', value: disabledCount },
+            ]}
+          />
+        )}
+
+        {loading ? <LoadingSpinner /> : (data?.length ?? 0) === 0 ? (
           <EmptyState title="No task definitions" body="Create one to wire up a trigger." />
         ) : (
           <Paper variant="outlined">

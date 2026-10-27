@@ -28,7 +28,8 @@ export const endpoints = {
   listExecs: (id: string, params: { limit?: number; offset?: number } = {}) =>
     api.get<Paginated<TaskExec>>(`/api/transactions/${id}/task-executions`, { params }).then(r => r.data),
 
-  listTaskDefs: () => api.get<TaskDef[]>('/api/task-definitions').then(r => r.data),
+  listTaskDefs: (customerId?: string) =>
+    api.get<TaskDef[]>('/api/task-definitions', { params: customerId ? { customerId } : {} }).then(r => r.data),
   createTaskDef: (body: Omit<TaskDef, '_id' | 'createdAt' | 'updatedAt'>) =>
     api.post<TaskDef>('/api/task-definitions', body).then(r => r.data),
   getTaskDef: (id: string) => api.get<TaskDef>(`/api/task-definitions/${id}`).then(r => r.data),
