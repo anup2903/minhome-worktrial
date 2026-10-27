@@ -8,6 +8,7 @@ import { TaskExecutionController } from '../controllers/TaskExecutionController'
 import { EmailLogController } from '../controllers/EmailLogController'
 import { NoteController } from '../controllers/NoteController'
 import { CustomerController } from '../controllers/CustomerController'
+import { InternalController } from '../controllers/InternalController'
 
 export function buildApiRouter(): Router {
   const r = Router()
@@ -15,6 +16,7 @@ export function buildApiRouter(): Router {
   r.get('/me', MeController.get)
 
   r.get('/customers', CustomerController.list)
+  r.patch('/customers/:id', CustomerController.update)
 
   r.get('/transactions', TransactionController.list)
   r.post('/transactions', TransactionController.create)
@@ -30,12 +32,15 @@ export function buildApiRouter(): Router {
 
   r.get('/task-definitions', TaskDefinitionController.list)
   r.post('/task-definitions', TaskDefinitionController.create)
+  r.post('/task-definitions/dry-run', TaskDefinitionController.dryRun)
   r.get('/task-definitions/:id', TaskDefinitionController.getById)
   r.patch('/task-definitions/:id', TaskDefinitionController.update)
   r.delete('/task-definitions/:id', TaskDefinitionController.remove)
 
   r.get('/email-log', EmailLogController.list)
   r.get('/notes', NoteController.list)
+
+  r.post('/internal/sweep', InternalController.sweep)
 
   return r
 }

@@ -6,6 +6,10 @@ import { connectMongo } from './db'
 import { currentUser } from './middleware/currentUser'
 import { errorHandler } from './middleware/errorHandler'
 import { buildApiRouter } from './routes'
+import { taskService } from './services/taskService'
+
+
+const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
 export function buildApp() {
   const app = express()
@@ -24,6 +28,14 @@ export function buildApp() {
 async function main() {
   await connectMongo()
   const app = buildApp()
+  if (env.NODE_ENV !== 'test') {
+    setInterval(() => {
+      taskService.runScheduledSweep().catch(err => {
+        // eslint-disable-next-line no-console
+        console.error('Scheduled sweep failed:', err)
+      })
+    }, SWEEP_INTERVAL_MS)
+  }
   app.listen(env.PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`MinHome API listening on http://localhost:${env.PORT}`)

@@ -8,10 +8,12 @@ export async function createNote(config: Config, ctx: ActionContext): Promise<Ac
   if (!config?.body) {
     throw new Error('createNote config requires body')
   }
-  const fields = (ctx.sot.fields ?? {}) as Record<string, unknown>
+  
+  const fields = (ctx.sot.fields?.toObject?.() ?? ctx.sot.fields ?? {}) as Record<string, unknown>
+  const vars = { ...fields, editorEmail: ctx.editorEmail, customerContactEmail: ctx.customerContactEmail }
   await Note.create({
     transactionId: ctx.transaction._id,
-    body: resolveTemplate(config.body, fields),
+    body: resolveTemplate(config.body, vars),
     source: 'task',
     taskDefinitionId: ctx.taskDefinition._id,
   })

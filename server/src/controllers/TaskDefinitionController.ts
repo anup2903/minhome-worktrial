@@ -4,9 +4,11 @@ import {
   createTaskDefinitionBody,
   updateTaskDefinitionBody,
   listTaskDefinitionsQuery,
+  dryRunBody,
 } from '../validations/taskDefinition'
 import { objectIdParam } from '../validations/common'
 import { NotFoundError } from '../errors'
+import { evaluatePredicatesDetailed } from '../services/taskPredicates'
 
 export const TaskDefinitionController = {
   async list(req: Request, res: Response, next: NextFunction) {
@@ -50,6 +52,24 @@ export const TaskDefinitionController = {
       const deleted = await TaskDefinition.findByIdAndDelete(id)
       if (!deleted) throw new NotFoundError('TaskDefinition', id)
       res.status(204).end()
+    } catch (e) { next(e) }
+  },
+
+  // Lets a customer admin test a draft rule against sample SOT data before
+  // creating it for real. Validates against the exact same schema `create`
+  // uses, then only evaluates predicates — no TaskDefinition/TaskExecution/
+  // TaskFireState write and no dispatch() call, so no email/flag/note/
+  // setField side effects happen on this path.
+  async dryRun(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { taskDefinition, sot } = dryRunBody.parse(req.body)
+      const predicateResults = evaluatePredicatesDetailed(taskDefinition.predicates, sot)
+      const wouldFire = predicateResults.every(r => r.passed)
+      res.json({
+        wouldFire,
+        predicateResults,
+        actions: wouldFire ? taskDefinition.actions : [],
+      })
     } catch (e) { next(e) }
   },
 }

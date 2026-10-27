@@ -23,9 +23,7 @@ export const SourceOfTruthController = {
 
       const diff = await sourceOfTruthService.applyChanges(id, changes as { key: string; value: unknown }[])
 
-      // Two side effects, both inline on the request path. Both services
-      // accept the diff array as-is.
-      await taskService.evaluate(id, diff)
+      await taskService.evaluate(id, diff, req.currentUser.email)
       await auditLogService.record(id, diff, req.currentUser.email)
 
       res.json({ ok: true, changed: diff.map(c => c.key) })

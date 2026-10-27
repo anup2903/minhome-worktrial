@@ -2,9 +2,10 @@ import { Schema, model, InferSchemaType, HydratedDocument } from 'mongoose'
 
 export const PREDICATE_OPS = [
   'eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'exists', 'notExists',
+  'in', 'notIn', 'daysUntilLte', 'daysUntilGt',
 ] as const
 
-export const ACTION_TYPES = ['sendEmail', 'setFlag', 'createNote'] as const
+export const ACTION_TYPES = ['sendEmail', 'setFlag', 'createNote', 'setField'] as const
 
 const predicateSchema = new Schema(
   {
